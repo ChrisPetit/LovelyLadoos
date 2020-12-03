@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Upload your Ladoos image.</p>
+    <form method="post" enctype="multipart/form-data" asp-controller="FileUpload" asp-action="Index">
+    <div class="form-group">
+        <div class="col-md-10" align="left">
+            <p>Upload one or more files using this form:</p>
+            <input type="file" name="files" />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-10" align="left">
+            <input type="submit" value="Upload" />
+        </div>
+    </div>
+</form>
+</div>

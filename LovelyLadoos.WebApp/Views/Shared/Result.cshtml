@@ -1,0 +1,34 @@
+﻿@model LovelyLadoos.WebApp.Models.ResultModel;
+
+@{
+    ViewBag.Title = "Result";
+    ViewData["Title"] = "Prediction Result";
+}
+
+<h1>Result</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+
+
+<div class="col-md-10">
+    <p>Your Image was:</p>
+    <br/>
+    <table>
+        @foreach (var prediction in @Model.predictions)
+        {
+            <tr>
+                <td>
+                    @prediction.tagName
+                </td>
+                <td>
+                    @(((prediction.probability)*100).ToString("0.##\\%"))
+                </td>
+            </tr>
+        }
+
+    </table>
+    <br/>
+    <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+</div>
