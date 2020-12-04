@@ -3,13 +3,14 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Upload your Ladoos image.</p>
+    <h1 class="display-4" align="left">Welcome</h1>
+    <p align="left">Upload your Ladoos image.</p>
     <form method="post" enctype="multipart/form-data" asp-controller="FileUpload" asp-action="Index">
     <div class="form-group">
         <div class="col-md-10" align="left">
-            <p>Upload one or more files using this form:</p>
-            <input type="file" name="files" />
+            <p>Upload a file or fill in an image URL using this form:</p>
+            <p><input type="file" name="files" /></p>
+            <p>Url: <input type="url" name="url" alt="URL" /></p>
         </div>
     </div>
     <div class="form-group">

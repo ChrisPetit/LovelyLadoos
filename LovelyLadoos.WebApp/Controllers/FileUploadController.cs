@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,32 +26,43 @@ namespace LovelyLadoos.WebApp.Controllers
         }
 
         [HttpPost("FileUpload")]
-        public async Task<IActionResult> Result(List<IFormFile> files)
+        public async Task<IActionResult> Result(List<IFormFile> files, string url)
         {
-
+            // 
+            if (string.IsNullOrEmpty(url) && files.Count.Equals(0)) return NoContent();
             var responseBody = "";
 
             foreach (var formFile in files.Where(formFile => formFile.Length > 0))
             {
+                // Create an Array to send to the Api
                 var fileBytes = await CreateFileBytesArray(formFile);
 
-                // process uploaded files
-                var image = CreateImageModel(formFile);
-
-                var byteArrayContent = CreateByteArrayContent(fileBytes, image);
-
+                // process uploaded file
+                var imageModel = CreateImageModel(formFile);
+                var byteArrayContent = CreateByteArrayContent(fileBytes, imageModel);
                 using var client = new HttpClient();
                 var multipartContent = CreateMultipartFormDataContent(byteArrayContent, formFile);
-
-                var request = CreateHttpRequestMessage(image, multipartContent);
-
-                var responseMessage = await client.SendAsync(request);
-                responseMessage.EnsureSuccessStatusCode();
-                responseBody = await responseMessage.Content.ReadAsStringAsync();
+                var request = CreateHttpRequestMessage(imageModel, multipartContent);
+                responseBody = await CreateResponseBody(client, request);
+            }
+            // Process an Url if that is filled in.
+            if (string.IsNullOrEmpty(url)) return Result(responseBody);
+            {
+                var urlModel = CreateUrlModel(url);
+                using var client = new HttpClient();
+                var request = CreateHttpRequestMessage(urlModel);
+                responseBody = await CreateResponseBody(client, request);
             }
 
             return Result(responseBody);
-            //return Ok(new {responseBody});
+        }
+
+        private static async Task<string> CreateResponseBody(HttpClient client, HttpRequestMessage request)
+        {
+            var responseMessage = await client.SendAsync(request);
+            responseMessage.EnsureSuccessStatusCode();
+            var responseBody = await responseMessage.Content.ReadAsStringAsync();
+            return responseBody;
         }
 
         public ActionResult Result(string jsonBody)
@@ -61,7 +73,7 @@ namespace LovelyLadoos.WebApp.Controllers
             return View(objJson);  //you have to pass model to view
         }
 
-        private static MultipartFormDataContent CreateMultipartFormDataContent(ByteArrayContent byteArrayContent,
+        private static MultipartFormDataContent CreateMultipartFormDataContent(HttpContent byteArrayContent,
             IFormFile formFile)
         {
             var multipartContent = new MultipartFormDataContent
@@ -71,19 +83,34 @@ namespace LovelyLadoos.WebApp.Controllers
             return multipartContent;
         }
 
-        private static HttpRequestMessage CreateHttpRequestMessage(ImageModel image, MultipartFormDataContent multipartContent)
+        private static HttpRequestMessage CreateHttpRequestMessage(ImageModel imageModel, HttpContent multipartContent)
         {
             var request = new HttpRequestMessage()
             {
-                RequestUri = new Uri(image.ImageUrl),
+                RequestUri = new Uri(imageModel.ImageUrl),
                 Method = HttpMethod.Post,
                 Headers =
                 {
-                    {HttpRequestHeader.ContentType.ToString(), image.ContentTypeHeader},
-                    {"Prediction-Key", image.PredictionKeyHeader}
+                    {HttpRequestHeader.ContentType.ToString(), imageModel.ContentTypeHeader},
+                    {"Prediction-Key", imageModel.PredictionKeyHeader}
                 },
-
                 Content = multipartContent
+            };
+            return request;
+        }
+
+        private static HttpRequestMessage CreateHttpRequestMessage(UrlModel urlModel)
+        {
+            var request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(urlModel.ImageUrl),
+                Method = HttpMethod.Post,
+                Headers =
+                {
+                    {HttpRequestHeader.ContentType.ToString(), urlModel.ContentTypeHeader},
+                    {"Prediction-Key", urlModel.PredictionKeyHeader}
+                },
+                Content = new StringContent($"{{\"Url\" : \"{urlModel.Body}\"}}", Encoding.UTF8, "application/json")
             };
             return request;
         }
@@ -99,13 +126,22 @@ namespace LovelyLadoos.WebApp.Controllers
 
         private ImageModel CreateImageModel(IFormFile formFile)
         {
-            var image = new ImageModel(_configuration["Api:PredictionKey"])
+            var imageModel = new ImageModel(_configuration["Api:PredictionKey"])
             {
                 ImageUrl = _configuration["Api:ImageUrl"],
-                ContentTypeHeader = "application/octet-stream",
                 Body = formFile
             };
-            return image;
+            return imageModel;
+        }
+
+        private UrlModel CreateUrlModel(string url)
+        {
+            var urlModel = new UrlModel(_configuration["Api:PredictionKey"])
+            {
+                ImageUrl = _configuration["Api:UrlUrl"],
+                Body = url
+            };
+            return urlModel;
         }
 
         private static ByteArrayContent CreateByteArrayContent(byte[] fileBytes, ImageModel image)

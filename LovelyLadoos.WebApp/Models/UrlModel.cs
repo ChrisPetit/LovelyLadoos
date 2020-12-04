@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace LovelyLadoos.WebApp.Models
 {
-    public class ImageModel
+    public class UrlModel
     {
-        public ImageModel(string predictionKeyHeader)
+        public UrlModel(string predictionKeyHeader)
         {
             PredictionKeyHeader = predictionKeyHeader;
-            ContentTypeHeader = "application/octet-stream";
+            ContentTypeHeader = "application/json";
         }
-
         public string ImageUrl { get; set; }
         public string PredictionKeyHeader { get; set; }
         public string ContentTypeHeader { get; set; }
-        public IFormFile Body { get; set; }
+        [JsonPropertyName("Url")]
+        public string Body { get; set; }
     }
 }
